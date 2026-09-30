@@ -276,16 +276,18 @@ class TestKafkaClientIntegration(KafkaIntegrationTestCase):
         client = AIOKafkaClient(bootstrap_servers=self.hosts)
         with mock.patch.object(AIOKafkaConnection, "send") as mock_send:
             mock_send.side_effect = KafkaError("some kafka error")
-            with self.assertRaises(KafkaConnectionError):
+            with self.assertRaises(KafkaConnectionError) as cm:
                 await client.bootstrap()
+            self.assertIs(cm.exception.__cause__, mock_send.side_effect)
 
     @run_until_complete
     async def test_failed_bootstrap_timeout(self):
         client = AIOKafkaClient(bootstrap_servers=self.hosts)
         with mock.patch.object(AIOKafkaConnection, "send") as mock_send:
             mock_send.side_effect = TimeoutError("Timeout error")
-            with self.assertRaises(KafkaConnectionError):
+            with self.assertRaises(KafkaConnectionError) as cm:
                 await client.bootstrap()
+            self.assertIs(cm.exception.__cause__, mock_send.side_effect)
 
     @run_until_complete
     async def test_send_request(self):
